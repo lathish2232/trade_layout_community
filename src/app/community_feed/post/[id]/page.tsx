@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { usePost, useCreateReply } from '@/lib/api/forum'
-import UserAvatar from '@/components/forum/UserAvatar'
-import LikeButton from '@/components/forum/LikeButton'
-import ReplyButton from '@/components/forum/ReplyButton'
-import MarkdownRenderer from '@/components/forum/MarkdownRenderer'
+import UserAvatar from '@/components/community_feed/UserAvatar'
+import LikeButton from '@/components/community_feed/LikeButton'
+import ReplyButton from '@/components/community_feed/ReplyButton'
+import MarkdownRenderer from '@/components/community_feed/MarkdownRenderer'
 
 export default function PostDetailPage() {
   const params = useParams()

@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation'
 import { useUser } from '@/lib/api/forum'
-import UserAvatar from '@/components/forum/UserAvatar'
+import UserAvatar from '@/components/community_feed/UserAvatar'
 
 export default function ProfilePage() {
   const params = useParams()

@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { Post } from '@/lib/api/forum'
 import UserAvatar from './UserAvatar'
-import LikeButton from '@/components/forum/LikeButton'
-import ReplyButton from '@/components/forum/ReplyButton'
+import LikeButton from '@/components/community_feed/LikeButton'
+import ReplyButton from '@/components/community_feed/ReplyButton'
 
 interface PostCardProps {
   post: Post
@@ -75,7 +75,7 @@ export default function PostCard({ post }: PostCardProps) {
             <div className="flex items-center space-x-4">
               <ReplyButton 
                 postId={post.id}
-                replyCount={post.replies.length}
+                replyCount={post.replies}
               />
               <LikeButton 
                 postId={post.id}

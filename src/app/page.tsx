@@ -11,23 +11,7 @@ export default function Home() {
     const authStatus = localStorage.getItem('isAuthenticated')
     const isAuth = authStatus === 'true'
     setIsAuthenticated(isAuth)
-    
-    // Redirect authenticated users to forum
-    if (isAuth) {
-      window.location.href = '/forum'
-    }
   }, [])
-
-  if (isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -75,16 +59,16 @@ export default function Home() {
           </p>
           <div className="mt-10 flex justify-center space-x-4">
             <Link
-              href="/auth/signup"
+              href="/community_feed"
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-pink-500 hover:bg-pink-600 transition-all duration-200 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/70"
             >
-              Get Started
+              Go to Community Feed
             </Link>
             <Link
-              href="/auth/signin"
+              href="/query/create"
               className="inline-flex items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
             >
-              Sign In
+              Create Query
             </Link>
           </div>
         </div>

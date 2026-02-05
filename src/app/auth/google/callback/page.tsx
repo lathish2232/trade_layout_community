@@ -13,130 +13,163 @@ export default function GoogleCallbackPage() {
   useEffect(() => {
     const handleGoogleCallback = async () => {
       try {
-        // Debug: Log all URL parameters from Google
-        const allParams = Object.fromEntries(searchParams.entries())
+        // Check if we have token directly from backend redirect
+        const token = searchParams.get('token')
+        const user_id = searchParams.get('user_id')
+        const display_name = searchParams.get('display_name')
+        const email = searchParams.get('email')
+        const avatar_url = searchParams.get('avatar_url')
+        const is_active = searchParams.get('is_active')
+        const created_at = searchParams.get('created_at')
+        const auth_provider = searchParams.get('auth_provider')
+        const is_oauth_user = searchParams.get('is_oauth_user')
+        const email_verified = searchParams.get('email_verified')
+
         console.log('=== GOOGLE OAUTH URL PARAMETERS ===')
-        console.log('📥 Received from Google:')
-        console.log('All Parameters:', JSON.stringify(allParams, null, 2))
+        console.log('📥 Received from backend:')
+        console.log('token:', token ? 'Present' : 'Missing')
+        console.log('user_id:', user_id)
+        console.log('display_name:', display_name)
+        console.log('email:', email)
         console.log('===================================')
-        
-        // Also log to terminal for backend debugging
-        console.log('GOOGLE URL PARAMETERS:', JSON.stringify(allParams))
-        
-        // Get authorization code from URL parameters
-        const code = searchParams.get('code')
-        const error = searchParams.get('error')
-        const error_description = searchParams.get('error_description')
-        
-        if (error) {
-          throw new Error(`Google authentication failed: ${error} - ${error_description}`)
-        }
-        
-        if (!code) {
-          throw new Error('No authorization code received from Google')
-        }
 
-        setMessage('Exchanging code for access token...')
-        
-        // Get additional URL parameters that Google might provide
-        const state = searchParams.get('state')
-        const scope = searchParams.get('scope')
-        const authuser = searchParams.get('authuser')
-        const prompt = searchParams.get('prompt')
-        const hd = searchParams.get('hd') // hosted domain
-        const session_state = searchParams.get('session_state')
-        
-        const requestData = {
-          code: code,
-          state: state,
-          scope: scope,
-          authuser: authuser,
-          prompt: prompt,
-          hd: hd,
-          session_state: session_state
-        }
-        
-        // Log what we're sending to backend
-        console.log('=== GOOGLE OAUTH CALLBACK DEBUG ===')
-        console.log('📤 Sending to Backend:')
-        console.log('URL:', API_URLS.GOOGLE_OAUTH_CALLBACK)
-        console.log('Method:', 'POST')
-        console.log('Headers:', { 'Content-Type': 'application/json' })
-        console.log('Body (Request Data):', JSON.stringify(requestData, null, 2))
-        console.log('==========================================')
-        
-        // Also log to terminal using console.log for visibility
-        console.log('BACKEND REQUEST DATA:', JSON.stringify(requestData))
-        
-        // Send authorization code and additional data to backend
-        const response = await fetch(API_URLS.GOOGLE_OAUTH_CALLBACK, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData)
-        })
-
-        console.log('Backend response status:', response.status)
-        console.log('Backend response headers:', Object.fromEntries(response.headers.entries()))
-        
-        if (!response.ok) {
-          const errorData = await response.json()
-          console.error('❌ Backend Error Response:')
-          console.error('Status:', response.status)
-          console.error('Status Text:', response.statusText)
-          console.error('Error Data:', JSON.stringify(errorData, null, 2))
-          console.error('====================================')
+        if (token) {
+          // Direct token flow - backend already processed OAuth
+          setMessage('Setting up your account...')
           
-          // Also log to terminal for backend debugging
-          console.log('BACKEND ERROR RESPONSE:', JSON.stringify({
-            status: response.status,
-            statusText: response.statusText,
-            error: errorData
-          }))
-          
-          throw new Error(errorData.detail || 'Failed to authenticate with Google')
-        }
+          // Create user object from URL parameters
+          const userData = {
+            id: parseInt(user_id || '1') || 1,
+            user_id: user_id || '',
+            display_name: display_name || '',
+            email: email || '',
+            avatar_url: avatar_url || '',
+            is_active: is_active === 'True',
+            created_at: created_at || '',
+            auth_provider: auth_provider || '',
+            is_oauth_user: is_oauth_user === 'True',
+            email_verified: email_verified === 'True'
+          }
 
-        const data = await response.json()
-        console.log('✅ Backend Success Response:')
-        console.log('Status:', response.status)
-        console.log('Response Data:', JSON.stringify(data, null, 2))
-        console.log('===================================')
-        
-        // Also log to terminal for backend debugging
-        console.log('BACKEND SUCCESS RESPONSE:', JSON.stringify(data))
-        
-        setMessage('Setting up your account...')
-        
-        // Log what we're storing in localStorage
-        console.log('=== STORING IN LOCAL STORAGE ===')
-        console.log('📦 Storing User Data:')
-        console.log('isAuthenticated:', 'true')
-        console.log('token:', data.access_token ? 'Present' : 'Missing')
-        console.log('user:', JSON.stringify(data.user, null, 2))
-        console.log('================================')
-        
-        // Also log to terminal
-        console.log('STORING LOCAL STORAGE:', JSON.stringify({
-          isAuthenticated: 'true',
-          hasToken: !!data.access_token,
-          user: data.user
-        }))
-        
-        // Store JWT token and user data in localStorage
-        localStorage.setItem('isAuthenticated', 'true')
-        localStorage.setItem('token', data.access_token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-        
-        // Update authentication status
-        setStatus('success')
-        setMessage('Successfully signed in with Google!')
-        
-        // Redirect to profile page after a short delay
-        setTimeout(() => {
-          router.push('/profile')
-        }, 1500)
+          // Store authentication data
+          console.log('=== STORING IN LOCAL STORAGE ===')
+          console.log('📦 Storing User Data:')
+          console.log('isAuthenticated:', 'true')
+          console.log('token:', 'Present')
+          console.log('user:', JSON.stringify(userData, null, 2))
+          console.log('================================')
+
+          localStorage.setItem('isAuthenticated', 'true')
+          localStorage.setItem('token', token)
+          localStorage.setItem('user', JSON.stringify(userData))
+
+          // Update authentication status
+          setStatus('success')
+          setMessage('Successfully signed in with Google!')
+
+          // Redirect to community feed after a short delay
+          setTimeout(() => {
+            router.push('/community_feed')
+          }, 1500)
+
+        } else {
+          // Check for error parameters
+          const error = searchParams.get('error')
+          const error_description = searchParams.get('error_description')
+          
+          if (error) {
+            throw new Error(`Google authentication failed: ${error} - ${error_description}`)
+          }
+
+          // Check for code (original flow - fallback)
+          const code = searchParams.get('code')
+          if (!code) {
+            throw new Error('No authorization code or token received')
+          }
+
+          // Original flow - make POST request to backend
+          setMessage('Exchanging code for access token...')
+          
+          // Get additional URL parameters that Google might provide
+          const state = searchParams.get('state')
+          const scope = searchParams.get('scope')
+          const authuser = searchParams.get('authuser')
+          const prompt = searchParams.get('prompt')
+          const hd = searchParams.get('hd') // hosted domain
+          const session_state = searchParams.get('session_state')
+          
+          const requestData = {
+            code: code,
+            state: state,
+            scope: scope,
+            authuser: authuser,
+            prompt: prompt,
+            hd: hd,
+            session_state: session_state
+          }
+          
+          // Log what we're sending to backend
+          console.log('=== GOOGLE OAUTH CALLBACK DEBUG ===')
+          console.log('📤 Sending to Backend:')
+          console.log('URL:', API_URLS.GOOGLE_OAUTH_CALLBACK)
+          console.log('Method:', 'POST')
+          console.log('Headers:', { 'Content-Type': 'application/json' })
+          console.log('Body (Request Data):', JSON.stringify(requestData, null, 2))
+          console.log('==========================================')
+          
+          // Send authorization code and additional data to backend
+          const response = await fetch(API_URLS.GOOGLE_OAUTH_CALLBACK, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+          })
+
+          console.log('Backend response status:', response.status)
+          console.log('Backend response headers:', Object.fromEntries(response.headers.entries()))
+          
+          if (!response.ok) {
+            const errorData = await response.json()
+            console.error('❌ Backend Error Response:')
+            console.error('Status:', response.status)
+            console.error('Status Text:', response.statusText)
+            console.error('Error Data:', JSON.stringify(errorData, null, 2))
+            console.error('====================================')
+            
+            throw new Error(errorData.detail || 'Failed to authenticate with Google')
+          }
+
+          const data = await response.json()
+          console.log('✅ Backend Success Response:')
+          console.log('Status:', response.status)
+          console.log('Response Data:', JSON.stringify(data, null, 2))
+          console.log('===================================')
+          
+          setMessage('Setting up your account...')
+          
+          // Log what we're storing in localStorage
+          console.log('=== STORING IN LOCAL STORAGE ===')
+          console.log('📦 Storing User Data:')
+          console.log('isAuthenticated:', 'true')
+          console.log('token:', data.access_token ? 'Present' : 'Missing')
+          console.log('user:', JSON.stringify(data.user, null, 2))
+          console.log('================================')
+          
+          // Store JWT token and user data in localStorage
+          localStorage.setItem('isAuthenticated', 'true')
+          localStorage.setItem('token', data.access_token)
+          localStorage.setItem('user', JSON.stringify(data.user))
+          
+          // Update authentication status
+          setStatus('success')
+          setMessage('Successfully signed in with Google!')
+          
+          // Redirect to community feed after a short delay
+          setTimeout(() => {
+            router.push('/community_feed')
+          }, 1500)
+        }
         
       } catch (error) {
         console.error('Google OAuth callback error:', error)

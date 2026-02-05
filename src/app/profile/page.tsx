@@ -42,17 +42,61 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState<Partial<User>>({})
 
   useEffect(() => {
-    // Get user data from localStorage
-    const getUserData = () => {
+    // Get user data from localStorage and fetch fresh data from backend
+    const getUserData = async () => {
       try {
+        // First get data from localStorage for immediate display
         const userStr = localStorage.getItem('user')
         if (userStr) {
           const userData = JSON.parse(userStr)
           setUser(userData)
           setFormData(userData)
         }
+
+        // Then fetch fresh data from backend
+        const token = localStorage.getItem('token')
+        if (token) {
+          console.log('Fetching fresh user data from backend...')
+          console.log('Token present:', token ? 'Yes' : 'No')
+          console.log('API URL:', API_URLS.USER_PROFILE)
+          
+          const response = await fetch(API_URLS.USER_PROFILE, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          })
+
+          console.log('GET Profile Response Status:', response.status)
+          console.log('GET Profile Response OK:', response.ok)
+
+          if (response.ok) {
+            const result = await response.json()
+            console.log('Fresh user data from backend:', result)
+            
+            // Backend returns data directly, not wrapped in {success: true, data: ...}
+            if (result && result.id) {
+              console.log('Updating user state with fresh data...')
+              // Update state with fresh backend data (direct response)
+              setUser(result)
+              setFormData(result)
+              // Also update localStorage with fresh data
+              localStorage.setItem('user', JSON.stringify(result))
+              console.log('User state updated successfully')
+            } else {
+              console.log('API response format unexpected:', result)
+            }
+          } else {
+            console.error('Failed to fetch fresh user data:', response.status)
+            const errorText = await response.text()
+            console.error('Error response:', errorText)
+          }
+        } else {
+          console.log('No token found, skipping backend fetch')
+        }
       } catch (error) {
-        console.error('Error parsing user data:', error)
+        console.error('Error fetching user data:', error)
       } finally {
         setIsLoading(false)
       }
@@ -66,6 +110,11 @@ export default function ProfilePage() {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     router.push('/')
+  }
+
+  const handleNavigateToForum = () => {
+    // Navigate directly to community feed
+    router.push('/community_feed')
   }
 
   const handleEdit = () => {
@@ -163,6 +212,13 @@ export default function ProfilePage() {
         automation_interest: formData.automation_interest || ''
       }
 
+      console.log('=== DEBUGGING AUTOMATION_INTEREST ===')
+      console.log('formData.automation_interest:', formData.automation_interest)
+      console.log('Type of automation_interest:', typeof formData.automation_interest)
+      console.log('Final automation_interest in profileData:', profileData.automation_interest)
+      console.log('Type of final automation_interest:', typeof profileData.automation_interest)
+      console.log('=====================================')
+
       console.log('Sending profile data to backend:', profileData)
       console.log('Token present:', token ? 'Yes' : 'No')
       console.log('Token length:', token ? token.length : 0)
@@ -182,6 +238,21 @@ export default function ProfilePage() {
       console.log('Response status:', response.status)
       console.log('Response statusText:', response.statusText)
       console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      
+      // Handle token expiration
+      if (response.status === 403) {
+        const errorData = await response.json()
+        console.error('Token expired or invalid:', errorData)
+        
+        // Clear local storage and redirect to login
+        localStorage.removeItem('isAuthenticated')
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        
+        alert('Your session has expired. Please sign in again.')
+        router.push('/auth/signin')
+        return
+      }
       
       // Get response text first to handle non-JSON responses
       const responseText = await response.text()
@@ -221,8 +292,8 @@ export default function ProfilePage() {
         // Show success message
         alert('Profile updated successfully!')
         
-        // Navigate to forum page after successful update
-        router.push('/forum')
+        // Navigate to community feed page after successful update
+        router.push('/community_feed')
       } else {
         throw new Error(result.message || 'Failed to update profile')
       }
@@ -255,6 +326,14 @@ export default function ProfilePage() {
       </AuthGuard>
     )
   }
+
+  // Debug: Log current user state
+  console.log('=== CURRENT USER STATE IN RENDER ===')
+  console.log('User data:', user)
+  console.log('User phone_number:', user?.phone_number)
+  console.log('User trading_experience:', user?.trading_experience)
+  console.log('User income_range:', user?.income_range)
+  console.log('=========================================')
 
   return (
     <AuthGuard>
@@ -409,34 +488,45 @@ export default function ProfilePage() {
                 <h3 className="text-lg leading-6 font-medium text-gray-900">
                   User Profile
                 </h3>
-                {!isEditing ? (
-                  <button
-                    onClick={handleEdit}
-                    className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200"
-                  >
-                    Edit Profile
-                  </button>
-                ) : (
-                  <div className="flex space-x-2">
+                <div className="flex flex-col items-end space-y-2">
+                  {!isEditing ? (
                     <button
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                      className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md font-medium transition-colors duration-200 disabled:opacity-50"
+                      onClick={handleEdit}
+                      className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200"
                     >
-                      Cancel
+                      Edit Profile
                     </button>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={handleCancel}
+                        disabled={isSaving}
+                        className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md font-medium transition-colors duration-200 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => {
+                          console.log('Save button clicked!')
+                          handleSave()
+                        }}
+                        disabled={isSaving}
+                        className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 disabled:opacity-50"
+                      >
+                        {isSaving ? 'Saving...' : 'Save'}
+                      </button>
+                    </div>
+                  )}
+                  {/* Show Navigate to Forum button only if phone number exists */}
+                  {user?.phone_number && !isEditing && (
                     <button
-                      onClick={() => {
-                        console.log('Save button clicked!')
-                        handleSave()
-                      }}
-                      disabled={isSaving}
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 disabled:opacity-50"
+                      onClick={handleNavigateToForum}
+                      className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200"
                     >
-                      {isSaving ? 'Saving...' : 'Save'}
+                      Go to Community Feed
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               
               <div className="flex items-center space-x-6">

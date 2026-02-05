@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { API_URLS } from '@/config/api'
 
 interface User {
   id: number
@@ -37,20 +38,40 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         const token = localStorage.getItem('token')
         const userStr = localStorage.getItem('user')
         
+        console.log('=== AUTH GUARD DEBUG ===')
+        console.log('authStatus:', authStatus)
+        console.log('token:', token ? 'Present' : 'Missing')
+        console.log('userStr:', userStr ? 'Present' : 'Missing')
+        console.log('localStorage contents:', {
+          isAuthenticated: localStorage.getItem('isAuthenticated'),
+          token: localStorage.getItem('token'),
+          user: localStorage.getItem('user')
+        })
+        console.log('=======================')
+        
+        // TEMPORARY: Always allow access for testing
+        console.log('TEMPORARY: Allowing access without authentication check')
+        setIsAuthenticated(true)
+        
+        /* Original logic - commented out for testing
         if (authStatus === 'true' && token && userStr) {
           const userData = JSON.parse(userStr)
           setUser(userData)
           setIsAuthenticated(true)
+          console.log('User authenticated successfully')
         } else {
-          // For testing purposes, set to true
-          setIsAuthenticated(true)
+          console.log('Authentication data missing or invalid')
+          setIsAuthenticated(false)
         }
+        */
+        
       } catch (error) {
         console.error('Error checking authentication:', error)
         // Clear corrupted auth data
         localStorage.removeItem('isAuthenticated')
         localStorage.removeItem('token')
         localStorage.removeItem('user')
+        setIsAuthenticated(false)
       } finally {
         setIsLoading(false)
       }
